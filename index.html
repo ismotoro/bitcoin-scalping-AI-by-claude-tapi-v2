@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BITCOIN SCALPING AI TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1116;
+    --panel: #161a23;
+    --panel2: #1c2130;
+    --accent: #00ffa3;
+    --accent2: #00c8ff;
+    --red: #ff3d6b;
+    --yellow: #ffd700;
+    --text: #e6e6e6;
+    --text-dim: #7a8099;
+    --border: #252d3f;
+    --glow: rgba(0,255,163,0.15);
+    --glow-red: rgba(255,61,107,0.15);
+    --long-color: #00ffa3;
+    --short-color: #ff3d6b;
+    --notrade-color: #7a8099;
+  }
+
+- { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 14px;
+overflow-x: hidden;
+min-height: 100vh;
+}
+
+/* Scanline overlay */
+body::before {
+content:’’;
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+pointer-events:none;
+z-index:9999;
+}
+
+/* ── HEADER ── */
+#header {
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding: 10px 20px;
+background: var(–panel);
+border-bottom: 1px solid var(–border);
+position:sticky;
+top:0;
+z-index:100;
+flex-wrap:wrap;
+gap:8px;
+}
+
+#header .logo {
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+#header .logo-icon {
+width:32px; height:32px;
+background: var(–accent);
+clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:14px;
+font-weight:900;
+color:#000;
+animation: pulse-icon 2s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+0%,100%{ box-shadow: 0 0 0 0 rgba(0,255,163,0.4); }
+50%{ box-shadow: 0 0 0 8px rgba(0,255,163,0); }
+}
+
+#header h1 {
+font-family:‘Orbitron’,monospace;
+font-size:13px;
+font-weight:700;
+letter-spacing:3px;
+color: var(–accent);
+text-shadow: 0 0 20px rgba(0,255,163,0.5);
+}
+
+#header .header-center {
+display:flex;
+align-items:center;
+gap:20px;
+}
+
+.btc-price-display {
+font-family:‘Share Tech Mono’,monospace;
+font-size:22px;
+font-weight:400;
+color:#fff;
+letter-spacing:1px;
+}
+
+.btc-change {
+font-family:‘Share Tech Mono’,monospace;
+font-size:13px;
+padding:3px 8px;
+border-radius:3px;
+font-weight:600;
+}
+
+.btc-change.up { background:rgba(0,255,163,0.15); color:var(–accent); }
+.btc-change.down { background:rgba(255,61,107,0.15); color:var(–red); }
+
+.regime-badge {
+font-family:‘Orbitron’,monospace;
+font-size:10px;
+letter-spacing:2px;
+padding:4px 12px;
+border-radius:2px;
+border:1px solid;
+font-weight:600;
+}
+
+.regime-badge.bullish { border-color:var(–accent); color:var(–accent); background:rgba(0,255,163,0.08); }
+.regime-badge.bearish { border-color:var(–red); color:var(–red); background:rgba(255,61,107,0.08); }
+.regime-badge.ranging { border-color:var(–yellow); color:var(–yellow); background:rgba(255,215,0,0.08); }
+
+.header-right {
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.live-dot {
+display:flex;
+align-items:center;
+gap:6px;
+font-family:‘Share Tech Mono’,monospace;
+font-size:11px;
+color:var(–text-dim);
+}
+
+.live-dot::before {
+content:’’;
+width:7px;height:7px;
+border-radius:50%;
+background:var(–accent);
+animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+.conn-status {
+font-family:‘Share Tech Mono’,monospace;
+font-size:10px;
+letter-spacing:1px;
+}
+
+.conn-status.ok { color:var(–accent); }
+.conn-status.err { color:var(–red); animation:blink 0.5s infinite; }
+
+/* ── MAIN GRID ── */
+#main {
+display:grid;
+grid-template-columns: 1fr 340px;
+grid-template-rows: auto auto;
+gap:1px;
+background: var(–border);
+height: calc(100vh - 57px);
+min-height:600px;
+}
+
+/* Left = chart + bottom */
+#left-col {
+display:grid;
+grid-template-rows: 1fr auto;
+gap:1px;
+background:var(–border);
+overflow:hidden;
+}
+
+/* Right = signal + intel stacked */
+#right-col {
+display:flex;
+flex-direction:column;
+gap:1px;
+background:var(–border);
+overflow-y:auto;
+overflow-x:hidden;
+}
+
+.panel {
+background:var(–panel);
+overflow:hidden;
+}
+
+.panel-header {
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:8px 14px;
+border-bottom:1px solid var(–border);
+background:var(–panel2);
+}
+
+.panel-title {
+font-family:‘Orbitron’,monospace;
+font-size:9px;
+letter-spacing:3px;
+color:var(–text-dim);
+font-weight:600;
+}
+
+.panel-badge {
+font-family:‘Share Tech Mono’,monospace;
+font-size:9px;
+color:var(–accent);
+opacity:0.7;
+}
+
+/* ── CHART ── */
+#chart-panel {
+position:relative;
+}
+
+#chart-panel .timeframe-bar {
+display:flex;
+gap:2px;
+padding:6px 10px;
+background:var(–panel2);
+border-bottom:1px solid var(–border);
+align-items:center;
+}
+
+.tf-btn {
+font-family:‘Share Tech Mono’,monospace;
+font-size:11px;
+padding:3px 10px;
+background:transparent;
+border:1px solid var(–border);
+color:var(–text-dim);
+cursor:pointer;
+border-radius:2px;
+transition:all 0.15s;
+letter-spacing:1px;
+}
+
+.tf-btn:hover, .tf-btn.active {
+background:rgba(0,255,163,0.1);
+border-color:var(–accent);
+color:var(–accent);
+}
+
+#tv-widget-container {
+width:100%;
+height: calc(100% - 38px);
+min-height:300px;
+}
+
+#tv-widget-container iframe {
+width:100%;
+height:100%;
+border:none;
+}
+
+/* ── BOTTOM FILTERS ── */
+#filters-panel {
+padding:10px 14px;
+background:var(–panel);
+border-top:1px solid var(–border);
+}
+
+.filters-grid {
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+margin-top:6px;
+}
+
+.filter-tag {
+display:flex;
+align-items:center;
+gap:6px;
+padding:4px 10px;
+border-radius:2px;
+border:1px solid var(–border);
+font-family:‘Share Tech Mono’,monospace;
+font-size:10px;
+letter-spacing:0.5px;
+transition:all 0.3s;
+}
+
+.filter-tag .dot {
+width:6px;height:6px;
+border-radius:50%;
+background:var(–text-dim);
+transition:all 0.3s;
+flex-shrink:0;
+}
+
+.filter-tag.active {
+border-color:rgba(0,255,163,0.3);
+background:rgba(0,255,163,0.05);
+color:var(–accent);
+}
+
+.filter-tag.active .dot {
+background:var(–accent);
+box-shadow:0 0 8px rgba(0,255,163,0.6);
+}
+
+.filter-tag.inactive {
+color:var(–text-dim);
+opacity:0.5;
+}
+
+.filter-tag.warn {
+border-color:rgba(255,215,0,0.3);
+background:rgba(255,215,0,0.05);
+color:var(–yellow);
+}
+
+.filter-tag.warn .dot {
+background:var(–yellow);
+box-shadow:0 0 8px rgba(255,215,0,0.6);
+}
+
+/* ── SIGNAL ENGINE ── */
+#signal-panel {
+padding:14px;
+flex:0 0 auto;
+}
+
+.signal-display {
+text-align:center;
+padding:16px 10px;
+margin:10px 0;
+border-radius:4px;
+position:relative;
+overflow:hidden;
+transition:all 0.4s;
+}
+
+.signal-display::before {
+content:’’;
+position:absolute;
+inset:0;
+opacity:0.06;
+}
+
+.signal-display.LONG {
+border:1px solid var(–long-color);
+background:rgba(0,255,163,0.05);
+}
+
+.signal-display.LONG::before {
+background:var(–long-color);
+}
+
+.signal-display.SHORT {
+border:1px solid var(–short-color);
+background:rgba(255,61,107,0.05);
+}
+
+.signal-display.SHORT::before {
+background:var(–short-color);
+}
+
+.signal-display.NOTRADE {
+border:1px solid var(–border);
+background:transparent;
+}
+
+.signal-label {
+font-family:‘Orbitron’,monospace;
+font-size:26px;
+font-weight:900;
+letter-spacing:6px;
+line-height:1;
+display:block;
+margin-bottom:4px;
+}
+
+.signal-display.LONG .signal-label { color:var(–long-color); text-shadow:0 0 30px rgba(0,255,163,0.6); }
+.signal-display.SHORT .signal-label { color:var(–short-color); text-shadow:0 0 30px rgba(255,61,107,0.6); }
+.signal-display.NOTRADE .signal-label { color:var(–text-dim); font-size:16px; letter-spacing:4px; }
+
+.signal-sub {
+font-family:‘Share Tech Mono’,monospace;
+font-size:10px;
+letter-spacing:2px;
+opacity:0.6;
+}
+
+/* Probability gauge */
+.prob-section {
+margin:10px 0;
+}
+
+.prob-label-row {
+display:flex;
+justify-content:space-between;
+margin-bottom:5px;
+font-family:‘Share Tech Mono’,monospace;
+font-size:10px;
+color:var(–text-dim);
+letter-spacing:1px;
+}
+
+.prob-value {
+font-size:13px;
+color:var(–accent);
+}
+
+.gauge-bar {
+height:6px;
+background:var(–panel2);
+border-radius:3px;
+overflow:hidden;
+position:relative;
+border:1px solid var(–border);
+}
+
+.gauge-fill {
+height:100%;
+border-radius:3px;
+transition:width 0.6s cubic-bezier(.4,0,.2,1);
+position:relative;
+}
+
+.gauge-fill.high { background:linear-gradient(90deg, #00c864, var(–accent)); box-shadow:0 0 10px rgba(0,255,163,0.4); }
+.gauge-fill.medium { background:linear-gradient(90deg, #c8a000, var(–yellow)); }
+.gauge-fill.low { background:linear-gradient(90deg, #c80000, var(–red)); }
+
+/* Trade setup */
+.trade-setup {
+background:var(–panel2);
+border:1px solid var(–border);
+border-radius:4px;
+padding:10px;
+margin:10px 0;
+}
+
+.setup-row {
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:5px 0;
+border-bottom:1px solid rgba(255,255,255,0.04);
+}
+
+.setup-row:last-child { border-bottom:none; }
+
+.setup-key {
+font-family:‘Share Tech Mono’,monospace;
+font-size:10px;
+color:var(–text-dim);
+letter-spacing:1px;
+}
+
+.setup-val {
+font-family:‘Share Tech Mono’,monospace;
+font-size:12px;
+font-weight:600;
+letter-spacing:0.5px;
+}
+
+.setup-val.entry { color:#fff; }
+.setup-val.sl { color:var(–red); }
+.setup-val.tp { color:var(–accent); }
+.setup-val.rr { color:var(–yellow); }
+
+/* ── MARKET INTELLIGENCE ── */
+#intel-panel {
+padding:14px;
+flex:1 0 auto;
+}
+
+.intel-meters {
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-top:8px;
+}
+
+.intel-meter {
+display:flex;
+flex-direction:column;
+gap:4px;
+}
+
+.meter-label-row {
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.meter-label {
+font-family:‘Rajdhani’,sans-serif;
+font-size:11px;
+color:var(–text-dim);
+letter-spacing:1.5px;
+font-weight:600;
+text-transform:uppercase;
+}
+
+.meter-val {
+font-family:‘Share Tech Mono’,monospace;
+font-size:11px;
+}
+
+.meter-track {
+height:4px;
+background:var(–panel2);
+border-radius:2px;
+overflow:hidden;
+border:1px solid var(–border);
+}
+
+.meter-fill {
+height:100%;
+border-radius:2px;
+transition:width 0.8s cubic-bezier(.4,0,.2,1);
+}
+
+.meter-fill.accent { background:linear-gradient(90deg, rgba(0,255,163,0.3), var(–accent)); }
+.meter-fill.red { background:linear-gradient(90deg, rgba(255,61,107,0.3), var(–red)); }
+.meter-fill.yellow { background:linear-gradient(90deg, rgba(255,215,0,0.3), var(–yellow)); }
+.meter-fill.blue { background:linear-gradient(90deg, rgba(0,200,255,0.3), var(–accent2)); }
+
+.meter-fill.dynamic { transition:background 0.5s, width 0.8s; }
+
+/* Mini candle-stream */
+#mini-ticker {
+display:flex;
+align-items:center;
+gap:3px;
+padding:6px 14px;
+background:var(–panel2);
+border-top:1px solid var(–border);
+overflow:hidden;
+flex-wrap:nowrap;
+}
+
+.ticker-candle {
+display:inline-flex;
+flex-direction:column;
+align-items:center;
+gap:1px;
+flex-shrink:0;
+}
+
+.tc-body {
+width:6px;
+border-radius:1px;
+}
+
+.tc-wick {
+width:1px;
+background:rgba(255,255,255,0.2);
+}
+
+/* Signal history */
+.signal-history {
+margin-top:8px;
+}
+
+.hist-row {
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:4px 0;
+border-bottom:1px solid rgba(255,255,255,0.03);
+font-family:‘Share Tech Mono’,monospace;
+font-size:10px;
+}
+
+.hist-type { font-weight:700; }
+.hist-type.L { color:var(–accent); }
+.hist-type.S { color:var(–red); }
+.hist-type.N { color:var(–text-dim); }
+
+.hist-time { color:var(–text-dim); }
+.hist-prob { color:var(–yellow); }
+
+/* alert flash */
+@keyframes signal-flash {
+0%{ box-shadow: 0 0 0 0 rgba(0,255,163,0.6); }
+50%{ box-shadow: 0 0 0 15px rgba(0,255,163,0); }
+100%{ box-shadow: 0 0 0 0 rgba(0,255,163,0); }
+}
+
+@keyframes signal-flash-red {
+0%{ box-shadow: 0 0 0 0 rgba(255,61,107,0.6); }
+50%{ box-shadow: 0 0 0 15px rgba(255,61,107,0); }
+100%{ box-shadow: 0 0 0 0 rgba(255,61,107,0); }
+}
+
+.signal-display.LONG.new-signal { animation: signal-flash 0.8s ease-out 3; }
+.signal-display.SHORT.new-signal { animation: signal-flash-red 0.8s ease-out 3; }
+
+/* Divider label */
+.divider-label {
+font-family:‘Orbitron’,monospace;
+font-size:8px;
+letter-spacing:3px;
+color:var(–text-dim);
+text-align:center;
+padding:4px 0;
+opacity:0.5;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:var(–bg); }
+::-webkit-scrollbar-thumb { background:var(–border); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:var(–text-dim); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+#main {
+grid-template-columns:1fr;
+grid-template-rows:400px auto auto;
+height:auto;
+}
+
+```
+#right-col {
+  flex-direction:row;
+  flex-wrap:wrap;
+}
+
+#signal-panel, #intel-panel {
+  flex:1 1 300px;
+}
+
+#header h1 { font-size:10px; letter-spacing:2px; }
+.btc-price-display { font-size:18px; }
+```
+
+}
+
+@media (max-width: 600px) {
+#header { padding:8px 12px; }
+#header h1 { display:none; }
+#right-col { flex-direction:column; }
+#signal-panel, #intel-panel { flex:none; }
+.btc-price-display { font-size:16px; }
+.signal-label { font-size:20px; }
+}
+
+/* Error overlay */
+#error-overlay {
+display:none;
+position:fixed;
+top:60px; right:14px;
+background:rgba(255,61,107,0.15);
+border:1px solid var(–red);
+padding:8px 14px;
+border-radius:3px;
+font-family:‘Share Tech Mono’,monospace;
+font-size:11px;
+color:var(–red);
+letter-spacing:1px;
+z-index:200;
+animation:blink 1s infinite;
+}
+
+/* sparkline */
+#sparkline-canvas {
+width:100%;
+height:40px;
+margin-top:6px;
+opacity:0.7;
+}
+
+.section-title {
+font-family:‘Share Tech Mono’,monospace;
+font-size:9px;
+letter-spacing:2px;
+color:var(–text-dim);
+margin-top:10px;
+margin-bottom:4px;
+opacity:0.6;
+}
+</style>
+
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+
+<div id="header">
+  <div class="logo">
+    <div class="logo-icon">₿</div>
+    <h1>BITCOIN SCALPING AI TERMINAL</h1>
+  </div>
+  <div class="header-center">
+    <div>
+      <div class="btc-price-display" id="btc-price">$──────</div>
+    </div>
+    <div id="btc-change" class="btc-change up">+0.00%</div>
+    <div id="regime-badge" class="regime-badge ranging">RANGING</div>
+  </div>
+  <div class="header-right">
+    <div class="live-dot">LIVE</div>
+    <div id="conn-status" class="conn-status ok">CONNECTED</div>
+    <div id="last-update" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);">--:--:--</div>
+  </div>
+</div>
+
+<div id="error-overlay">⚠ DATA CONNECTION LOST</div>
+
+<!-- ── MAIN ── -->
+
+<div id="main">
+  <!-- LEFT COL -->
+  <div id="left-col">
+    <div class="panel" id="chart-panel">
+      <div class="timeframe-bar">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-right:6px;">TF</span>
+        <button class="tf-btn" onclick="setTimeframe('1')">1m</button>
+        <button class="tf-btn active" onclick="setTimeframe('5')">5m</button>
+        <button class="tf-btn" onclick="setTimeframe('15')">15m</button>
+        <button class="tf-btn" onclick="setTimeframe('60')">1h</button>
+        <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);">BTC/USDT · BINANCE</div>
+      </div>
+      <div id="tv-widget-container"></div>
+    </div>
+
+```
+<!-- BOTTOM FILTERS -->
+<div class="panel" id="filters-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+    <span class="panel-title">◈ TRADE FILTERS — ALL MUST AGREE FOR SIGNAL</span>
+    <span id="filters-status" class="panel-badge">SCANNING…</span>
+  </div>
+  <div class="filters-grid" id="filters-grid">
+    <div class="filter-tag inactive" id="f-structure"><span class="dot"></span>MARKET STRUCTURE</div>
+    <div class="filter-tag inactive" id="f-momentum"><span class="dot"></span>MOMENTUM CONFIRM</div>
+    <div class="filter-tag inactive" id="f-volatility"><span class="dot"></span>VOLATILITY EXPANSION</div>
+    <div class="filter-tag inactive" id="f-liquidity"><span class="dot"></span>LIQUIDITY SWEEP</div>
+    <div class="filter-tag inactive" id="f-trend"><span class="dot"></span>TREND ALIGNMENT</div>
+    <div class="filter-tag inactive" id="f-fakeout"><span class="dot"></span>LOW FAKE BREAKOUT RISK</div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- RIGHT COL -->
+
+  <div id="right-col">
+
+```
+<!-- SIGNAL ENGINE -->
+<div class="panel" id="signal-panel">
+  <div class="panel-header">
+    <span class="panel-title">◈ AI SIGNAL ENGINE</span>
+    <span id="signal-age" class="panel-badge">--</span>
+  </div>
+
+  <div style="padding:0 14px;">
+    <div id="signal-display" class="signal-display NOTRADE">
+      <span class="signal-label" id="signal-label">NO TRADE</span>
+      <span class="signal-sub" id="signal-sub">WAITING FOR CONFLUENCE</span>
+    </div>
+
+    <!-- Probability -->
+    <div class="prob-section">
+      <div class="prob-label-row">
+        <span>SIGNAL PROBABILITY</span>
+        <span class="prob-value" id="prob-val">--</span>
+      </div>
+      <div class="gauge-bar">
+        <div class="gauge-fill low" id="prob-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Signal Strength -->
+    <div class="prob-section" style="margin-top:8px;">
+      <div class="prob-label-row">
+        <span>SIGNAL STRENGTH</span>
+        <span class="prob-value" id="strength-val">--</span>
+      </div>
+      <div class="gauge-bar">
+        <div class="gauge-fill medium" id="strength-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Trade Setup -->
+    <div class="trade-setup" id="trade-setup">
+      <div class="setup-row">
+        <span class="setup-key">ENTRY</span>
+        <span class="setup-val entry" id="s-entry">──────</span>
+      </div>
+      <div class="setup-row">
+        <span class="setup-key">STOP LOSS</span>
+        <span class="setup-val sl" id="s-sl">──────</span>
+      </div>
+      <div class="setup-row">
+        <span class="setup-key">TAKE PROFIT</span>
+        <span class="setup-val tp" id="s-tp">──────</span>
+      </div>
+      <div class="setup-row">
+        <span class="setup-key">RISK:REWARD</span>
+        <span class="setup-val rr" id="s-rr">──</span>
+      </div>
+      <div class="setup-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:8px;">
+        <span class="setup-key">SL DISTANCE</span>
+        <span class="setup-val" id="s-sldist" style="color:var(--text-dim);">──</span>
+      </div>
+      <div class="setup-row">
+        <span class="setup-key">TP DISTANCE</span>
+        <span class="setup-val" id="s-tpdist" style="color:var(--text-dim);">──</span>
+      </div>
+    </div>
+
+    <!-- Sparkline -->
+    <canvas id="sparkline-canvas" height="40"></canvas>
+
+    <!-- Recent signals -->
+    <div class="section-title">RECENT SIGNALS</div>
+    <div class="signal-history" id="signal-history"></div>
+  </div>
+</div>
+
+<!-- MARKET INTELLIGENCE -->
+<div class="panel" id="intel-panel">
+  <div class="panel-header">
+    <span class="panel-title">◈ MARKET INTELLIGENCE</span>
+    <span id="intel-time" class="panel-badge">--</span>
+  </div>
+
+  <div style="padding:0 14px 14px;">
+    <div class="intel-meters" id="intel-meters">
+
+      <div class="intel-meter">
+        <div class="meter-label-row">
+          <span class="meter-label">MOMENTUM</span>
+          <span class="meter-val" id="m-momentum" style="color:var(--text-dim)">--</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill accent dynamic" id="mf-momentum" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="intel-meter">
+        <div class="meter-label-row">
+          <span class="meter-label">VOLATILITY (ATR)</span>
+          <span class="meter-val" id="m-volatility" style="color:var(--text-dim)">--</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill yellow dynamic" id="mf-volatility" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="intel-meter">
+        <div class="meter-label-row">
+          <span class="meter-label">TREND STRENGTH</span>
+          <span class="meter-val" id="m-trend" style="color:var(--text-dim)">--</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill blue dynamic" id="mf-trend" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="intel-meter">
+        <div class="meter-label-row">
+          <span class="meter-label">FAKE BREAKOUT PROB</span>
+          <span class="meter-val" id="m-fakeout" style="color:var(--text-dim)">--</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill red dynamic" id="mf-fakeout" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="intel-meter">
+        <div class="meter-label-row">
+          <span class="meter-label">LIQUIDITY PRESSURE</span>
+          <span class="meter-val" id="m-liquidity" style="color:var(--text-dim)">--</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill accent dynamic" id="mf-liquidity" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="intel-meter">
+        <div class="meter-label-row">
+          <span class="meter-label">RSI (14)</span>
+          <span class="meter-val" id="m-rsi" style="color:var(--text-dim)">--</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill dynamic" id="mf-rsi" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="intel-meter">
+        <div class="meter-label-row">
+          <span class="meter-label">EMA STRUCTURE</span>
+          <span class="meter-val" id="m-ema" style="color:var(--text-dim)">--</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill dynamic" id="mf-ema" style="width:0%"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Mini price table -->
+    <div class="section-title" style="margin-top:12px;">EMA LEVELS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;" id="ema-levels">
+      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:6px;text-align:center;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:3px;">EMA20</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="ema20-val">──</div>
+      </div>
+      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:6px;text-align:center;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:3px;">EMA50</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="ema50-val">──</div>
+      </div>
+      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:6px;text-align:center;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:3px;">EMA200</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="ema200-val">──</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:12px;">SWING LEVELS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:6px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--red);letter-spacing:1px;margin-bottom:3px;">SWING HIGH</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="swing-high">──</div>
+      </div>
+      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:6px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:1px;margin-bottom:3px;">SWING LOW</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="swing-low">──</div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  BITCOIN SCALPING AI TERMINAL — ENGINE
+// ═══════════════════════════════════════════════════════════
+
+'use strict';
+
+// ── STATE ──────────────────────────────────────────────────
+const state = {
+  price: 0,
+  prevPrice: 0,
+  price24hAgo: 0,
+  candles: [],           // [{o,h,l,c,v,t}]  5m candles, max 250
+  klineBuffer: [],       // raw kline cache
+  currentTF: '5',
+  signal: 'NOTRADE',
+  prevSignal: 'NOTRADE',
+  signalAge: 0,
+  signalHistory: [],
+  indicators: {},
+  filters: {},
+  connected: false,
+  errCount: 0,
+  lastSignalTs: 0,
+  priceHistory: [],      // for sparkline, last 60 prices
+  swingHigh: 0,
+  swingLow: 0,
+};
+
+// ── TRADINGVIEW WIDGET ─────────────────────────────────────
+function buildTVWidget(tf) {
+  const container = document.getElementById('tv-widget-container');
+  const intervalMap = {'1':'1','5':'5','15':'15','60':'60'};
+  const interval = intervalMap[tf] || '5';
+
+  // Use the advanced chart iframe — guaranteed dark, no script conflicts
+  const src = `https://s.tradingview.com/widgetembed/?` + [
+    `symbol=BINANCE%3ABTCUSDT`,
+    `interval=${interval}`,
+    `theme=dark`,
+    `style=1`,
+    `locale=en`,
+    `toolbar_bg=%23161a23`,
+    `hide_side_toolbar=0`,
+    `allow_symbol_change=0`,
+    `save_image=0`,
+    `withdateranges=0`,
+    `hideideas=1`,
+    `hide_top_toolbar=0`,
+    `studies=RSI%40tv-studytemplate`,
+    `bgcolor=%230f1116`,
+    `gridColor=rgba(37%2C45%2C63%2C0.5)`,
+  ].join('&');
+
+  container.innerHTML = `<iframe
+    src="${src}"
+    style="width:100%;height:100%;border:none;background:#0f1116;"
+    allowtransparency="true"
+    frameborder="0"
+    scrolling="no"
+  ></iframe>`;
+}
+
+function setTimeframe(tf) {
+  state.currentTF = tf;
+  document.querySelectorAll('.tf-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.replace('m','').replace('h','') === (tf==='60'?'1':tf) && (tf!=='60'||b.textContent==='1h'));
+    b.classList.toggle('active', b.onclick.toString().includes(`'${tf}'`));
+  });
+  // Re-mark active
+  document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+  const map = {'1':'1m','5':'5m','15':'15m','60':'1h'};
+  document.querySelectorAll('.tf-btn').forEach(b => {
+    if(b.textContent === map[tf]) b.classList.add('active');
+  });
+  buildTVWidget(tf);
+  fetchCandles();
+}
+
+// ── DATA FETCHING ───────────────────────────────────────────
+async function fetchPrice() {
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {cache:'no-store'});
+    if(!res.ok) throw new Error();
+    const d = await res.json();
+    state.prevPrice = state.price;
+    state.price = parseFloat(d.price);
+
+    if(!state.price24hAgo) state.price24hAgo = state.price;
+    state.priceHistory.push(state.price);
+    if(state.priceHistory.length > 120) state.priceHistory.shift();
+
+    setConnected(true);
+    updatePriceUI();
+  } catch(e) {
+    setConnected(false);
+  }
+}
+
+async function fetch24h() {
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+    if(!res.ok) return;
+    const d = await res.json();
+    state.price24hAgo = parseFloat(d.openPrice);
+  } catch(e){}
+}
+
+async function fetchCandles() {
+  const intervalMap = {'1':'1m','5':'5m','15':'15m','60':'1h'};
+  const interval = intervalMap[state.currentTF] || '5m';
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=250`);
+    if(!res.ok) throw new Error();
+    const raw = await res.json();
+    state.candles = raw.map(k => ({
+      t: k[0],
+      o: parseFloat(k[1]),
+      h: parseFloat(k[2]),
+      l: parseFloat(k[3]),
+      c: parseFloat(k[4]),
+      v: parseFloat(k[5]),
+    }));
+    computeIndicators();
+  } catch(e){
+    setConnected(false);
+  }
+}
+
+// ── INDICATORS ─────────────────────────────────────────────
+function ema(closes, period) {
+  if(closes.length < period) return null;
+  const k = 2/(period+1);
+  let e = closes.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<closes.length;i++) e = closes[i]*k + e*(1-k);
+  return e;
+}
+
+function rsi(closes, period=14) {
+  if(closes.length < period+1) return 50;
+  let gains=0,losses=0;
+  for(let i=closes.length-period;i<closes.length;i++){
+    const d=closes[i]-closes[i-1];
+    if(d>0) gains+=d; else losses-=d;
+  }
+  const rs=(gains/period)/(losses/period||0.0001);
+  return 100-(100/(1+rs));
+}
+
+function atr(candles, period=14) {
+  if(candles.length < period+1) return 0;
+  const trs = [];
+  for(let i=candles.length-period;i<candles.length;i++){
+    const c=candles[i], p=candles[i-1];
+    trs.push(Math.max(c.h-c.l, Math.abs(c.h-p.c), Math.abs(c.l-p.c)));
+  }
+  return trs.reduce((a,b)=>a+b,0)/period;
+}
+
+function swingHighLow(candles, lookback=20) {
+  const slice = candles.slice(-lookback);
+  const highs = slice.map(c=>c.h);
+  const lows  = slice.map(c=>c.l);
+  return {
+    high: Math.max(...highs),
+    low:  Math.min(...lows),
+  };
+}
+
+function detectLiquiditySweep(candles, lookback=30) {
+  if(candles.length < lookback+5) return {swept:false, dir:'none'};
+  const ref = candles.slice(-lookback-5, -5);
+  const recent = candles.slice(-5);
+  const refHigh = Math.max(...ref.map(c=>c.h));
+  const refLow  = Math.min(...ref.map(c=>c.l));
+  const recentHigh = Math.max(...recent.map(c=>c.h));
+  const recentLow  = Math.min(...recent.map(c=>c.l));
+  const lastClose  = recent[recent.length-1].c;
+
+  // Swept high then returned below
+  if(recentHigh > refHigh && lastClose < refHigh) return {swept:true, dir:'above'};
+  // Swept low then returned above
+  if(recentLow  < refLow  && lastClose > refLow)  return {swept:true, dir:'below'};
+  return {swept:false, dir:'none'};
+}
+
+function detectFakeBreakout(candles) {
+  if(candles.length < 10) return 50;
+  const recent = candles.slice(-6);
+  let fakeScore = 0;
+
+  for(let i=1;i<recent.length;i++){
+    const c=recent[i], p=recent[i-1];
+    const range=c.h-c.l;
+    if(range===0) continue;
+    const bodyRatio=Math.abs(c.c-c.o)/range;
+    const upperWick=(c.h-Math.max(c.c,c.o))/range;
+    const lowerWick=(Math.min(c.c,c.o)-c.l)/range;
+
+    // Long upper wick = rejection at top = bearish fake breakout signal
+    if(upperWick > 0.5) fakeScore += 20;
+    // Long lower wick = rejection at bottom
+    if(lowerWick > 0.5) fakeScore += 20;
+    // Small body = indecision
+    if(bodyRatio < 0.3) fakeScore += 10;
+  }
+
+  return Math.min(100, fakeScore);
+}
+
+function computeIndicators() {
+  const candles = state.candles;
+  if(candles.length < 50) return;
+
+  const closes = candles.map(c=>c.c);
+  const E20  = ema(closes, 20);
+  const E50  = ema(closes, 50);
+  const E200 = ema(closes, 200);
+  const RSI  = rsi(closes, 14);
+  const ATR  = atr(candles, 14);
+  const price = state.price || closes[closes.length-1];
+
+  // ATR % of price
+  const atrPct = ATR/price*100;
+
+  // Average ATR over last 20 periods for expansion check
+  const atrVals=[];
+  for(let i=candles.length-21;i<candles.length-1;i++){
+    if(i<1) continue;
+    const c=candles[i],p=candles[i-1];
+    atrVals.push(Math.max(c.h-c.l,Math.abs(c.h-p.c),Math.abs(c.l-p.c)));
+  }
+  const avgATR = atrVals.reduce((a,b)=>a+b,0)/(atrVals.length||1);
+  const atrExpanded = ATR > avgATR * 1.15;
+
+  // EMA structure
+  let emaTrend='RANGE';
+  let emaTrendStrength=50;
+  if(E20 && E50 && E200){
+    if(price>E20 && E20>E50 && E50>E200){ emaTrend='BULLISH'; emaTrendStrength=85; }
+    else if(price>E20 && E20>E50)        { emaTrend='BULLISH'; emaTrendStrength=65; }
+    else if(price<E20 && E20<E50 && E50<E200){ emaTrend='BEARISH'; emaTrendStrength=85; }
+    else if(price<E20 && E20<E50)         { emaTrend='BEARISH'; emaTrendStrength=65; }
+  }
+
+  // Swing high/low
+  const sw = swingHighLow(candles, 20);
+  state.swingHigh = sw.high;
+  state.swingLow  = sw.low;
+
+  // Liquidity sweep
+  const liqSweep = detectLiquiditySweep(candles, 30);
+
+  // Fake breakout
+  const fakeProb = detectFakeBreakout(candles);
+
+  // Momentum from RSI
+  let momentumDir='NEUTRAL';
+  let momentumPct=50;
+  if(RSI>60){ momentumDir='BULLISH'; momentumPct=RSI; }
+  else if(RSI<40){ momentumDir='BEARISH'; momentumPct=100-RSI; }
+
+  // Volume pressure (compare last 3 candle volume to 10-period avg)
+  const volSlice = candles.slice(-10).map(c=>c.v);
+  const avgVol = volSlice.reduce((a,b)=>a+b,0)/volSlice.length;
+  const recentVol = candles.slice(-3).map(c=>c.v).reduce((a,b)=>a+b,0)/3;
+  const volPressure = Math.min(100, (recentVol/avgVol)*50);
+
+  state.indicators = {
+    E20, E50, E200, RSI, ATR, atrPct, atrExpanded, avgATR,
+    emaTrend, emaTrendStrength,
+    liqSweep, fakeProb,
+    momentumDir, momentumPct,
+    volPressure, price,
+  };
+
+  evaluateSignal();
+}
+
+// ── SIGNAL ENGINE ─────────────────────────────────────────
+function evaluateSignal() {
+  const I = state.indicators;
+  if(!I || !I.E20) return;
+
+  // Filter evaluation
+  const filters = {
+    structure: I.emaTrend !== 'RANGE',
+    momentum:  I.momentumDir !== 'NEUTRAL',
+    volatility: I.atrExpanded,
+    liquidity:  I.liqSweep.swept,
+    trend:      I.emaTrendStrength >= 65,
+    fakeout:    I.fakeProb < 35,
+  };
+
+  state.filters = filters;
+
+  // Direction agreement
+  const bullish = (
+    I.emaTrend === 'BULLISH' &&
+    I.momentumDir === 'BULLISH' &&
+    I.liqSweep.dir === 'below'  // swept below then came back = long setup
+  );
+
+  const bearish = (
+    I.emaTrend === 'BEARISH' &&
+    I.momentumDir === 'BEARISH' &&
+    I.liqSweep.dir === 'above'  // swept above then came back = short setup
+  );
+
+  const allFiltersGo = Object.values(filters).every(v => v);
+
+  let signal = 'NOTRADE';
+  if(allFiltersGo && bullish)  signal = 'LONG';
+  if(allFiltersGo && bearish)  signal = 'SHORT';
+
+  // Debounce: don't flip signal every second
+  const now = Date.now();
+  if(signal !== 'NOTRADE' && signal === state.prevSignal && (now - state.lastSignalTs) < 60000) {
+    // keep existing
+    signal = state.signal;
+  }
+
+  const changed = signal !== state.signal;
+  state.prevSignal = state.signal;
+  state.signal = signal;
+
+  if(changed && signal !== 'NOTRADE'){
+    state.lastSignalTs = now;
+    logSignal(signal, computeProb(filters, I));
+  }
+
+  updateSignalUI(filters, I, changed);
+}
+
+function computeProb(filters, I) {
+  let score = 0;
+  const activeCount = Object.values(filters).filter(v=>v).length;
+  score += (activeCount/6)*40;
+  score += (I.emaTrendStrength/100)*20;
+  score += ((100-I.fakeProb)/100)*15;
+  score += (I.momentumPct/100)*15;
+  score += I.atrExpanded ? 10 : 0;
+  return Math.min(97, Math.round(score));
+}
+
+function computeStrength(filters, I) {
+  let s = 0;
+  if(filters.structure)  s+=16;
+  if(filters.momentum)   s+=16;
+  if(filters.volatility) s+=16;
+  if(filters.liquidity)  s+=20;
+  if(filters.trend)      s+=16;
+  if(filters.fakeout)    s+=16;
+  return Math.min(100, s);
+}
+
+// ── UI UPDATE ──────────────────────────────────────────────
+function updatePriceUI() {
+  const p = state.price;
+  if(!p) return;
+
+  document.getElementById('btc-price').textContent = '$' + p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const chg = state.price24hAgo ? ((p-state.price24hAgo)/state.price24hAgo)*100 : 0;
+  const chgEl = document.getElementById('btc-change');
+  chgEl.textContent = (chg>=0?'+':'')+chg.toFixed(2)+'%';
+  chgEl.className = 'btc-change ' + (chg>=0?'up':'down');
+
+  // Update time
+  const now = new Date();
+  document.getElementById('last-update').textContent =
+    now.toTimeString().slice(0,8);
+
+  drawSparkline();
+}
+
+function updateSignalUI(filters, I, changed) {
+  const sig = state.signal;
+  const prob = computeProb(filters, I);
+  const strength = computeStrength(filters, I);
+  const price = I.price || state.price;
+
+  // Signal display
+  const display = document.getElementById('signal-display');
+  const label   = document.getElementById('signal-label');
+  const sub     = document.getElementById('signal-sub');
+
+  display.className = 'signal-display ' + (sig==='NOTRADE'?'NOTRADE':sig);
+  if(changed && sig!=='NOTRADE') {
+    display.classList.add('new-signal');
+    setTimeout(()=>display.classList.remove('new-signal'), 2500);
+  }
+
+  if(sig==='LONG')    { label.textContent='LONG';    sub.textContent='HIGH PROBABILITY SETUP ▲'; }
+  else if(sig==='SHORT') { label.textContent='SHORT'; sub.textContent='HIGH PROBABILITY SETUP ▼'; }
+  else                { label.textContent='NO TRADE'; sub.textContent='WAITING FOR CONFLUENCE'; }
+
+  // Probability gauge
+  const probFill = document.getElementById('prob-fill');
+  const probVal  = document.getElementById('prob-val');
+  probFill.style.width = prob + '%';
+  probVal.textContent  = sig==='NOTRADE' ? '--' : prob+'%';
+  probFill.className   = 'gauge-fill ' + (prob>=70?'high':prob>=45?'medium':'low');
+
+  // Strength gauge
+  document.getElementById('strength-fill').style.width = strength+'%';
+  document.getElementById('strength-val').textContent = sig==='NOTRADE'?'--':strength+'%';
+
+  // Trade setup
+  if(sig!=='NOTRADE' && price) {
+    const swH = state.swingHigh;
+    const swL = state.swingLow;
+    let sl, tp, slDist, tpDist, rr;
+
+    if(sig==='LONG'){
+      sl = swL;
+      slDist = price - sl;
+      tpDist = slDist * 2.5;
+      tp = price + tpDist;
+    } else {
+      sl = swH;
+      slDist = sl - price;
+      tpDist = slDist * 2.5;
+      tp = price - tpDist;
+    }
+
+    rr = tpDist/slDist;
+
+    document.getElementById('s-entry').textContent = '$'+price.toFixed(2);
+    document.getElementById('s-sl').textContent    = '$'+sl.toFixed(2);
+    document.getElementById('s-tp').textContent    = '$'+tp.toFixed(2);
+    document.getElementById('s-rr').textContent    = '1:'+(rr.toFixed(1));
+    document.getElementById('s-sldist').textContent= '$'+Math.abs(slDist).toFixed(2)+' ('+((Math.abs(slDist)/price)*100).toFixed(2)+'%)';
+    document.getElementById('s-tpdist').textContent= '$'+Math.abs(tpDist).toFixed(2)+' ('+((Math.abs(tpDist)/price)*100).toFixed(2)+'%)';
+  } else {
+    ['s-entry','s-sl','s-tp','s-rr','s-sldist','s-tpdist'].forEach(id=>{
+      document.getElementById(id).textContent='──────';
+    });
+  }
+
+  // Signal age
+  if(sig!=='NOTRADE' && state.lastSignalTs){
+    const age = Math.round((Date.now()-state.lastSignalTs)/1000);
+    document.getElementById('signal-age').textContent = age+'s AGO';
+  } else {
+    document.getElementById('signal-age').textContent='SCANNING';
+  }
+
+  // Filters
+  const fMap = {
+    'f-structure':'structure',
+    'f-momentum':'momentum',
+    'f-volatility':'volatility',
+    'f-liquidity':'liquidity',
+    'f-trend':'trend',
+    'f-fakeout':'fakeout',
+  };
+
+  Object.entries(fMap).forEach(([elId, key]) => {
+    const el = document.getElementById(elId);
+    el.className = 'filter-tag ' + (filters[key]?'active':'inactive');
+  });
+
+  const activeCount = Object.values(filters).filter(v=>v).length;
+  const statusEl = document.getElementById('filters-status');
+  if(activeCount===6) statusEl.textContent='ALL CLEAR ✓';
+  else statusEl.textContent = activeCount+'/6 ACTIVE';
+
+  // Regime badge
+  const regimeBadge = document.getElementById('regime-badge');
+  if(I.emaTrend==='BULLISH') { regimeBadge.className='regime-badge bullish'; regimeBadge.textContent='BULLISH TREND'; }
+  else if(I.emaTrend==='BEARISH') { regimeBadge.className='regime-badge bearish'; regimeBadge.textContent='BEARISH TREND'; }
+  else { regimeBadge.className='regime-badge ranging'; regimeBadge.textContent='RANGING'; }
+
+  // Intel meters
+  const rsiColor = I.RSI > 70 ? 'red' : I.RSI < 30 ? 'accent' : (I.RSI>50?'accent':'red');
+  setMeter('momentum',  Math.round(I.momentumPct||50), I.momentumDir, I.momentumDir==='BULLISH'?'var(--accent)':I.momentumDir==='BEARISH'?'var(--red)':'var(--text-dim)', 'mf-momentum', I.momentumDir==='BULLISH'?'accent':'red');
+  setMeter('volatility', Math.round(Math.min(100,(I.atrPct/0.3)*100)), I.atrPct.toFixed(3)+'%', 'var(--yellow)', 'mf-volatility', 'yellow');
+  setMeter('trend',     Math.round(I.emaTrendStrength||50), I.emaTrend, I.emaTrend==='BULLISH'?'var(--accent2)':I.emaTrend==='BEARISH'?'var(--red)':'var(--text-dim)', 'mf-trend', 'blue');
+  setMeter('fakeout',   Math.round(I.fakeProb||0), Math.round(I.fakeProb||0)+'%', I.fakeProb<35?'var(--accent)':'var(--red)', 'mf-fakeout', 'red');
+  setMeter('liquidity', Math.round(I.volPressure||0), I.liqSweep?.swept?(I.liqSweep.dir==='below'?'SWEEP ↓':'SWEEP ↑'):'NO SWEEP', I.liqSweep?.swept?'var(--accent)':'var(--text-dim)', 'mf-liquidity', 'accent');
+  setMeter('rsi',       Math.round(I.RSI||50), (I.RSI||50).toFixed(1), I.RSI>70?'var(--red)':I.RSI<30?'var(--accent)':'var(--text-dim)', 'mf-rsi', rsiColor);
+
+  // EMA structure meter
+  const emaStr = I.emaTrend==='BULLISH'?85:I.emaTrend==='BEARISH'?85:30;
+  setMeter('ema', emaStr, I.emaTrend, I.emaTrend==='BULLISH'?'var(--accent)':'var(--red)', 'mf-ema', I.emaTrend==='BULLISH'?'accent':'red');
+
+  // EMA level display
+  if(I.E20)  document.getElementById('ema20-val').textContent  = '$'+Math.round(I.E20).toLocaleString();
+  if(I.E50)  document.getElementById('ema50-val').textContent  = '$'+Math.round(I.E50).toLocaleString();
+  if(I.E200) document.getElementById('ema200-val').textContent = '$'+Math.round(I.E200).toLocaleString();
+
+  if(state.swingHigh) document.getElementById('swing-high').textContent = '$'+state.swingHigh.toFixed(2);
+  if(state.swingLow)  document.getElementById('swing-low').textContent  = '$'+state.swingLow.toFixed(2);
+
+  // Intel time
+  document.getElementById('intel-time').textContent = new Date().toTimeString().slice(0,8);
+}
+
+function setMeter(id, pct, label, color, fillId, fillClass) {
+  const valEl  = document.getElementById('m-'+id);
+  const fillEl = document.getElementById(fillId);
+  if(valEl)  { valEl.textContent = label; valEl.style.color = color; }
+  if(fillEl) {
+    fillEl.style.width = Math.max(0,Math.min(100,pct))+'%';
+    fillEl.className = 'meter-fill dynamic ' + fillClass;
+  }
+}
+
+function setConnected(ok) {
+  state.connected = ok;
+  const el = document.getElementById('conn-status');
+  const err = document.getElementById('error-overlay');
+  if(ok) {
+    el.className='conn-status ok';
+    el.textContent='CONNECTED';
+    err.style.display='none';
+    state.errCount=0;
+  } else {
+    state.errCount++;
+    if(state.errCount>3){
+      el.className='conn-status err';
+      el.textContent='NO DATA';
+      err.style.display='block';
+    }
+  }
+}
+
+// ── SIGNAL HISTORY ─────────────────────────────────────────
+function logSignal(sig, prob) {
+  const ts = new Date().toTimeString().slice(0,8);
+  state.signalHistory.unshift({sig, prob, ts});
+  if(state.signalHistory.length>8) state.signalHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const container = document.getElementById('signal-history');
+  if(!state.signalHistory.length){
+    container.innerHTML='<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--text-dim);padding:4px 0;">NO SIGNALS YET</div>';
+    return;
+  }
+  container.innerHTML = state.signalHistory.map(s=>`
+    <div class="hist-row">
+      <span class="hist-type ${s.sig==='LONG'?'L':s.sig==='SHORT'?'S':'N'}">${s.sig}</span>
+      <span class="hist-time">${s.ts}</span>
+      <span class="hist-prob">${s.prob}%</span>
+    </div>
+  `).join('');
+}
+
+// ── SPARKLINE ──────────────────────────────────────────────
+function drawSparkline() {
+  const canvas = document.getElementById('sparkline-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.offsetWidth;
+  const h = 40;
+  canvas.width = w;
+  canvas.height = h;
+  ctx.clearRect(0,0,w,h);
+
+  const prices = state.priceHistory;
+  if(prices.length < 2) return;
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+
+  const color = prices[prices.length-1] >= prices[0] ? '#00ffa3' : '#ff3d6b';
+
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = color;
+
+  prices.forEach((p,i) => {
+    const x = (i/(prices.length-1))*w;
+    const y = h - ((p-min)/range)*(h-6) - 3;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Fill
+  ctx.beginPath();
+  prices.forEach((p,i) => {
+    const x = (i/(prices.length-1))*w;
+    const y = h - ((p-min)/range)*(h-6) - 3;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.lineTo(w, h);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  ctx.fillStyle = color+'18';
+  ctx.fill();
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+let candleTimer = null;
+
+async function boot() {
+  buildTVWidget(state.currentTF);
+  renderHistory();
+
+  await fetch24h();
+  await fetchPrice();
+  await fetchCandles();
+
+  // Price every 1s
+  setInterval(fetchPrice, 1000);
+  // 24h change every 30s
+  setInterval(fetch24h, 30000);
+  // Candles every 10s
+  setInterval(fetchCandles, 10000);
+}
+
+boot();
+</script>
+
+</body>
+</html>

@@ -28,6 +28,9 @@
 
 - { margin:0; padding:0; box-sizing:border-box; }
 
+html { background:#0f1116 !important; }
+body { background:#0f1116 !important; background-color:#0f1116 !important; }
+
 body {
 background: var(–bg);
 color: var(–text);
@@ -196,11 +199,14 @@ gap:1px;
 background:var(–border);
 overflow-y:auto;
 overflow-x:hidden;
+background-color:#161a23;
 }
 
 .panel {
-background:var(–panel);
+background:#161a23 !important;
+background-color:#161a23 !important;
 overflow:hidden;
+color:#e6e6e6;
 }
 
 .panel-header {
@@ -209,7 +215,8 @@ align-items:center;
 justify-content:space-between;
 padding:8px 14px;
 border-bottom:1px solid var(–border);
-background:var(–panel2);
+background:#1c2130 !important;
+color:#e6e6e6;
 }
 
 .panel-title {
@@ -275,8 +282,9 @@ border:none;
 /* ── BOTTOM FILTERS ── */
 #filters-panel {
 padding:10px 14px;
-background:var(–panel);
+background:#161a23 !important;
 border-top:1px solid var(–border);
+color:#e6e6e6;
 }
 
 .filters-grid {
@@ -338,6 +346,8 @@ box-shadow:0 0 8px rgba(255,215,0,0.6);
 #signal-panel {
 padding:14px;
 flex:0 0 auto;
+background:#161a23 !important;
+color:#e6e6e6;
 }
 
 .signal-display {
@@ -483,6 +493,8 @@ letter-spacing:0.5px;
 #intel-panel {
 padding:14px;
 flex:1 0 auto;
+background:#161a23 !important;
+color:#e6e6e6;
 }
 
 .intel-meters {
@@ -692,8 +704,22 @@ margin-top:10px;
 margin-bottom:4px;
 opacity:0.6;
 }
-</style>
 
+/* ── DARK MODE NUCLEAR OVERRIDE ── */
+html, body, #main, #left-col, #right-col,
+.panel, #signal-panel, #intel-panel, #filters-panel,
+#chart-panel, #header, .panel-header, .trade-setup,
+.signal-display, .intel-meters, .gauge-bar, .meter-track {
+background-color: #0f1116;
+color: #e6e6e6;
+}
+.panel, .panel-header { background-color: #161a23 !important; }
+.panel-header, .trade-setup, .panel2, .timeframe-bar { background-color: #1c2130 !important; }
+.signal-display.NOTRADE { background: #161a23 !important; }
+.signal-display.LONG  { background: rgba(0,255,163,0.05) !important; }
+.signal-display.SHORT { background: rgba(255,61,107,0.05) !important; }
+
+</style>
 </head>
 <body>
 
